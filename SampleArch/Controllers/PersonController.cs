@@ -7,8 +7,8 @@ namespace SampleArch.Controllers
 {
     public class PersonController : Controller
     {
-        IPersonService _personService;
-        ICountryService _countryService;
+        readonly IPersonService _personService;
+        readonly ICountryService _countryService;
         public PersonController(IPersonService personService, ICountryService countryService)
         {
             _personService = personService;
@@ -28,7 +28,7 @@ namespace SampleArch.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Person person = _personService.GetById(id.Value);
+            var person = _personService.GetById(id.Value);
             if (person == null)
             {
                 return HttpNotFound();
@@ -67,7 +67,7 @@ namespace SampleArch.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Person person = _personService.GetById(id.Value);
+            var person = _personService.GetById(id.Value);
             if (person == null)
             {
                 return HttpNotFound();
@@ -99,7 +99,7 @@ namespace SampleArch.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Person person = _personService.GetById(id.Value);
+            var person = _personService.GetById(id.Value);
             if (person == null)
             {
                 return HttpNotFound();
@@ -112,7 +112,7 @@ namespace SampleArch.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(long id)
         {
-            Person person = _personService.GetById(id);
+            var person = _personService.GetById(id);
             _personService.Delete(person);
             return RedirectToAction("Index");
         }

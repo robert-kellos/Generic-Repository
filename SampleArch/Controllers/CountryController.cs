@@ -7,7 +7,7 @@ namespace SampleArch.Controllers
     public class CountryController : Controller
     {
         //initialize service object
-        ICountryService _countryService;
+        readonly ICountryService _countryService;
 
         public CountryController(ICountryService countryService)
         {
@@ -45,20 +45,16 @@ namespace SampleArch.Controllers
         {
 
             // TODO: Add insert logic here
-            if (ModelState.IsValid)
-            {
-                _countryService.Add(country);
-                return RedirectToAction("Index");
-            }
-            return View(country);
-
+            if (!ModelState.IsValid) return View(country);
+            _countryService.Add(country);
+            return RedirectToAction("Index");
         }
 
         //
         // GET: /Country/Update/5
         public ActionResult Edit(int id)
         {            
-            Country country = _countryService.GetById(id);
+            var country = _countryService.GetById(id);
             if (country == null)
             {
                 return HttpNotFound();
@@ -85,7 +81,7 @@ namespace SampleArch.Controllers
         // GET: /Country/Delete/5
         public ActionResult Delete(int id)
         {
-            Country country = _countryService.GetById(id);
+            var country = _countryService.GetById(id);
             if (country == null)
             {
                 return HttpNotFound();
@@ -99,7 +95,7 @@ namespace SampleArch.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, FormCollection data)
         {
-            Country country = _countryService.GetById(id);
+            var country = _countryService.GetById(id);
             _countryService.Delete(country);
             return RedirectToAction("Index");
         }

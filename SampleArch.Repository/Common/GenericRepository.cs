@@ -237,7 +237,7 @@ namespace SampleArch.Repository.Common
             try
             {
                 var dbQuery = _currentDbContext.Set<TEntity>();
-                result = await dbQuery.Where(@where).ToListAsync().ConfigureAwait(true);
+                result = await dbQuery.Where(@where).ToListAsync(cancellationToken).ConfigureAwait(true);
             }
             catch (SqlException sqex)
             {
@@ -376,7 +376,7 @@ namespace SampleArch.Repository.Common
                 var added = _currentDbSet.Add(entity);
 
                 _currentDbContext.Entry(entity).State = EntityState.Added;
-                _currentDbContext.SaveChangesAsync();
+                //_currentDbContext.SaveChangesAsync();
 
                 result = added;
             }
@@ -412,21 +412,15 @@ namespace SampleArch.Repository.Common
 
             try
             {
-                //await Task.Factory.StartNew(() =>
-                //{
-                //    var added = _currentDbSet.Add(entity);
+                await Task.Factory.StartNew(() => 
+                { 
+                    var added = _currentDbSet.Add(entity);
 
-                //    _currentDbContext.Entry(entity).State = EntityState.Added;
+                    _currentDbContext.Entry(entity).State = EntityState.Added;
+                    //await _currentDbContext.SaveChangesAsync(cancellationToken);
 
-                //    result = added;
-                //}).ConfigureAwait(true);   
-
-                var added = _currentDbSet.Add(entity);
-
-                _currentDbContext.Entry(entity).State = EntityState.Added;
-                await _currentDbContext.SaveChangesAsync();
-
-                result = added;
+                    result = added;
+                }, cancellationToken).ConfigureAwait(true);
             }
             catch (SqlException sqex)
             {
@@ -524,7 +518,7 @@ namespace SampleArch.Repository.Common
             _currentDbContext.Entry(entity).State = EntityState.Deleted;
 
             var result = _currentDbSet.Remove(entity);
-            _currentDbContext.SaveChanges();
+            //_currentDbContext.SaveChanges();
 
             return result;
         }
@@ -560,7 +554,7 @@ namespace SampleArch.Repository.Common
             AppUtility.ValidateEntity(entity);
 
             _currentDbContext.Entry(entity).State = EntityState.Modified;
-            _currentDbContext.SaveChangesAsync();
+            //_currentDbContext.SaveChangesAsync();
         }
 
         /// <summary>
@@ -576,7 +570,7 @@ namespace SampleArch.Repository.Common
             AppUtility.ValidateEntity(entity);
 
             _currentDbContext.Entry(entity).State = EntityState.Modified;
-            await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
+            //await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
         }
 
         /// <summary>

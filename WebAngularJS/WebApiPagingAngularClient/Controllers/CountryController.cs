@@ -38,7 +38,7 @@ namespace WebApiPagingAngularClient.Controllers
         [ResponseType(typeof(Country))]
         public async Task<IHttpActionResult> GetCountry(int id)
         {
-            Country country = await _countryService.GetByIdAsync(id, _cancellationToken);
+            var country = await _countryService.GetByIdAsync(id, _cancellationToken);
             if (country == null)
             {
                 return NotFound();
