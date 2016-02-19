@@ -6,11 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
+using FluentValidation.Attributes;
 using SampleArch.Model;
 using SampleArch.Service;
+using SampleArch.Validation.Validators;
 
 namespace WebApiPagingAngularClient.Controllers
 {
+    [Validator(typeof(CountryValidator))]
     public class CountryController : ApiController
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -27,6 +30,8 @@ namespace WebApiPagingAngularClient.Controllers
 
             _cancellationTokenSource = new CancellationTokenSource();
             _cancellationToken = _cancellationTokenSource.Token;
+
+            CountryService.ClientRequestDownload();
         }
 
         // GET: api/Country

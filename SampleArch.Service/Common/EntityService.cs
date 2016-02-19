@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using SampleArch.Logging;
@@ -61,6 +62,35 @@ namespace SampleArch.Service.Common
         /// The count.
         /// </value>
         public int Count => _repository.Count;
+
+        public static void ClientRequestDownload()
+        {
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+
+            Task.Run(() =>
+            {
+                var wc = new WebClient();
+
+                // Create an event handler to receive the result.
+                // Check status of WebClient, not external token.
+                wc.DownloadStringCompleted += (obj, e) 
+                => { Audit.Log.Debug(!e.Cancelled ? "The download has completed:\n" : "The download was canceled."); };
+
+                // Do not initiate download if the external token
+                // has already been canceled.
+                if (token.IsCancellationRequested) return;
+                // Register the callback to a method that can unblock.
+                using (token.Register(() => wc.CancelAsync()))
+                {
+                    Audit.Log.Debug("Starting request\n");
+                    wc.DownloadStringAsync(new Uri("http://www.news.google.com"));
+                }
+                
+            }, token);
+            
+            //cts.Dispose();
+        }
 
 
         /// <summary>
