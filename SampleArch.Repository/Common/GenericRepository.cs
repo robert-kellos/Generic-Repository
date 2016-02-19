@@ -81,7 +81,7 @@ namespace SampleArch.Repository.Common
         /// <value>
         /// The count.
         /// </value>
-        int IGenericRepository<TEntity>.Count => _currentDbSet?.Count() ?? -1;
+        int IGenericRepository<TEntity>.Count => _currentDbSet?.AsParallel().Count() ?? -1;
 
 
         /// <summary>
@@ -99,16 +99,16 @@ namespace SampleArch.Repository.Common
             var skipCount = index*size;
 
             var resetSet = filter != null
-                ? _currentDbSet.Where(filter).AsQueryable()
-                : _currentDbSet.AsQueryable();
+                ? _currentDbSet.Where(filter).AsParallel().AsQueryable()
+                : _currentDbSet.AsParallel().AsQueryable();
 
             resetSet = skipCount == 0
                 ? resetSet.Take(size)
                 : resetSet.Skip(skipCount).Take(size);
 
-            total = resetSet.Count();
+            total = resetSet.AsParallel().Count();
 
-            return resetSet.AsQueryable();
+            return resetSet.AsNoTracking().AsParallel().AsQueryable();
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace SampleArch.Repository.Common
 
             try
             {
-                result = _currentDbSet.AsEnumerable();
+                result = _currentDbSet.AsNoTracking().AsParallel().AsEnumerable();
             }
             catch (SqlException sqex)
             {
@@ -161,7 +161,7 @@ namespace SampleArch.Repository.Common
                 if (navigationProperties != null)
                 {
                     //Apply eager loading
-                    dbQuery = navigationProperties.Aggregate(
+                    dbQuery = navigationProperties.AsParallel().Aggregate(
                         dbQuery,
                         (current, navigationProperty) => current.Include(navigationProperty)
                         );
@@ -171,6 +171,7 @@ namespace SampleArch.Repository.Common
 
                 list = await dbQuery
                     .AsNoTracking()
+                    .AsParallel()
                     .Where(@where)
                     .AsQueryable()
                     .ToListAsync().ConfigureAwait(true);
@@ -204,7 +205,7 @@ namespace SampleArch.Repository.Common
 
             try
             {
-                query = _currentDbSet.Where(where).AsEnumerable();
+                query = _currentDbSet.Where(where).AsNoTracking().AsParallel().AsEnumerable();
             }
             catch (SqlException sqex)
             {
@@ -237,7 +238,7 @@ namespace SampleArch.Repository.Common
             try
             {
                 var dbQuery = _currentDbContext.Set<TEntity>();
-                result = await dbQuery.Where(@where).ToListAsync(cancellationToken).ConfigureAwait(true);
+                result = await dbQuery.Where(@where).AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(true);
             }
             catch (SqlException sqex)
             {
@@ -272,7 +273,7 @@ namespace SampleArch.Repository.Common
             {
                 var dbQuery = _currentDbContext.Set<TEntity>();
 
-                result = dbQuery.Where(@where).Include(include).ToList();
+                result = dbQuery.Where(@where).AsNoTracking().Include(include).ToList().AsParallel();
             }
             catch (SqlException sqex)
             {
@@ -306,7 +307,7 @@ namespace SampleArch.Repository.Common
             try
             {
                 var dbQuery = _currentDbContext.Set<TEntity>();
-                result = await dbQuery.Where(@where).Include(include).ToListAsync().ConfigureAwait(true);
+                result = await dbQuery.Where(@where).AsNoTracking().Include(include).ToListAsync().ConfigureAwait(true);
             }
             catch (SqlException sqex)
             {
@@ -342,6 +343,7 @@ namespace SampleArch.Repository.Common
                 foreach (var item in items)
                 {
                     _currentDbContext.Entry(item).State = EntityState.Deleted;
+                    //Attach(item, EntityState.Deleted);
                 }
                 await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
             }
@@ -376,7 +378,7 @@ namespace SampleArch.Repository.Common
                 var added = _currentDbSet.Add(entity);
 
                 _currentDbContext.Entry(entity).State = EntityState.Added;
-                //_currentDbContext.SaveChangesAsync();
+                //Attach(entity, EntityState.Added);
 
                 result = added;
             }
@@ -415,8 +417,7 @@ namespace SampleArch.Repository.Common
                 await Task.Factory.StartNew(() => 
                 { 
                     var added = _currentDbSet.Add(entity);
-
-                    _currentDbContext.Entry(entity).State = EntityState.Added;
+                    //Attach(entity, EntityState.Added);
                     //await _currentDbContext.SaveChangesAsync(cancellationToken);
 
                     result = added;
@@ -453,6 +454,7 @@ namespace SampleArch.Repository.Common
                 foreach (var item in items)
                 {
                     _currentDbContext.Entry(item).State = EntityState.Added;
+                    //Attach(item, EntityState.Added);
                 }
                 _currentDbContext.SaveChangesAsync();
             }
@@ -488,6 +490,7 @@ namespace SampleArch.Repository.Common
                 foreach (var item in items)
                 {
                     _currentDbContext.Entry(item).State = EntityState.Added;
+                    //Attach(item, EntityState.Added);
                 }
                 await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
             }
@@ -516,6 +519,7 @@ namespace SampleArch.Repository.Common
             AppUtility.ValidateEntity(entity);
 
             _currentDbContext.Entry(entity).State = EntityState.Deleted;
+            //Attach(entity, EntityState.Deleted);
 
             var result = _currentDbSet.Remove(entity);
             //_currentDbContext.SaveChanges();
@@ -532,15 +536,24 @@ namespace SampleArch.Repository.Common
         /// <exception cref="System.NotImplementedException"></exception>
         public async Task<TEntity> DeleteAsync(TEntity entity, CancellationToken cancellationToken)
         {
+            //var result = default(Task<TEntity>);
+
             AppUtility.ValidateDbSet(_currentDbSet);
             AppUtility.ValidateEntity(entity);
 
-            _currentDbContext.Entry(entity).State = EntityState.Deleted;
+            await Task.Factory.StartNew(() =>
+            {
+                _currentDbContext.Entry(entity).State = EntityState.Deleted;
+                //Attach(entity, EntityState.Deleted);
 
-            var result = _currentDbSet.Remove(entity);
-            await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
+                var result = _currentDbSet.Remove(entity);
+                //await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
 
-            return result;
+                return result;
+
+            }, cancellationToken).ConfigureAwait(true);
+
+            return null;
         }
 
         /// <summary>
@@ -553,7 +566,9 @@ namespace SampleArch.Repository.Common
             AppUtility.ValidateContext(_currentDbContext);
             AppUtility.ValidateEntity(entity);
 
-            _currentDbContext.Entry(entity).State = EntityState.Modified;
+            //_currentDbContext.Entry(entity).State = EntityState.Modified;
+            Attach(entity, EntityState.Modified);
+
             //_currentDbContext.SaveChangesAsync();
         }
 
@@ -569,8 +584,13 @@ namespace SampleArch.Repository.Common
             AppUtility.ValidateContext(_currentDbContext);
             AppUtility.ValidateEntity(entity);
 
-            _currentDbContext.Entry(entity).State = EntityState.Modified;
-            //await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
+            await Task.Factory.StartNew(() => {
+
+                //_currentDbContext.Entry(entity).State = EntityState.Modified;
+                Attach(entity, EntityState.Modified);
+                //await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
+
+            }, cancellationToken).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -590,7 +610,8 @@ namespace SampleArch.Repository.Common
             {
                 foreach (var item in items)
                 {
-                    _currentDbContext.Entry(item).State = EntityState.Modified;
+                    //_currentDbContext.Entry(item).State = EntityState.Modified;
+                    Attach(item, EntityState.Modified);
                 }
                 await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
             }
@@ -623,6 +644,7 @@ namespace SampleArch.Repository.Common
                 foreach (var item in items)
                 {
                     _currentDbContext.Entry(item).State = EntityState.Deleted;
+                    //Attach(item, EntityState.Deleted);
                 }
                 _currentDbContext.SaveChangesAsync();
             }
@@ -654,7 +676,8 @@ namespace SampleArch.Repository.Common
             {
                 foreach (var item in items)
                 {
-                    _currentDbContext.Entry(item).State = EntityState.Modified;
+                    //_currentDbContext.Entry(item).State = EntityState.Modified;
+                    Attach(item, EntityState.Modified);
                 }
                 _currentDbContext.SaveChangesAsync();
             }
@@ -690,7 +713,7 @@ namespace SampleArch.Repository.Common
             }
             catch (DbEntityValidationException ex)
             {
-                var errors = ex.EntityValidationErrors.SelectMany(
+                var errors = ex.EntityValidationErrors.AsParallel().SelectMany(
                     x => x.ValidationErrors.Select(y => new ValidationResult(y.ErrorMessage, new[] {y.PropertyName})));
 
                 Audit.Log.Error(
@@ -732,7 +755,7 @@ namespace SampleArch.Repository.Common
             }
             catch (DbEntityValidationException ex)
             {
-                var errors = ex.EntityValidationErrors.SelectMany(
+                var errors = ex.EntityValidationErrors.AsParallel().SelectMany(
                     x => x.ValidationErrors.Select(y => new ValidationResult(y.ErrorMessage, new[] { y.PropertyName })));
 
                 Audit.Log.Error(
@@ -788,6 +811,7 @@ namespace SampleArch.Repository.Common
                 {
                     list = dbQuery
                         .AsNoTracking()
+                        .AsParallel()
                         .ToList();
                 }
             }
@@ -873,6 +897,7 @@ namespace SampleArch.Repository.Common
 
                 list = dbQuery
                     .AsNoTracking()
+                    .AsParallel()
                     .Where(where)
                     .ToList();
             }
@@ -922,6 +947,7 @@ namespace SampleArch.Repository.Common
 
                 item = dbQuery
                     .AsNoTracking() //Don't track any changes for the selected item
+                    .AsParallel()
                     .FirstOrDefault(where); //Apply where clause
             }
             catch (SqlException sqex)
@@ -1054,15 +1080,30 @@ namespace SampleArch.Repository.Common
         /// Attaches the specified entity.
         /// </summary>
         /// <param name="entity">The entity.</param>
-        public void Attach(TEntity entity)
+        /// <param name="entityState">State of the entity based on action (update, add, delete).</param>
+        public void Attach(TEntity entity, EntityState entityState)
         {
             AppUtility.ValidateContext(_currentDbContext);
 
             try
             {
-                var dbset = _currentDbContext.Set<TEntity>();
+                //old - doesn't account for loaded entity in set
+                //var dbset = _currentDbContext.Set<TEntity>();
+                //dbset.Attach(entity);((IEntity<long>)_service)
+                
+                //
+                var local = _currentDbContext.Set<TEntity>()
+                         .Local
+                         .AsParallel()
+                         .FirstOrDefault(f => (((IEntity<long>)f).Id == ((IEntity<long>)entity).Id));
 
-                dbset.Attach(entity);
+                if (local != null)
+                {
+                    _currentDbContext.Entry(local).State = EntityState.Detached;
+                }
+
+                _currentDbContext.Entry(entity).State = entityState;
+
             }
             catch (SqlException sqex)
             {

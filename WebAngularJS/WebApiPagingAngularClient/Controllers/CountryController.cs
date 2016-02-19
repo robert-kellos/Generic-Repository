@@ -14,6 +14,7 @@ namespace WebApiPagingAngularClient.Controllers
     public class CountryController : ApiController
     {
         private readonly CancellationToken _cancellationToken;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
         //initialize service object
         private readonly ICountryService _countryService;
@@ -24,7 +25,9 @@ namespace WebApiPagingAngularClient.Controllers
         public CountryController(ICountryService countryService)
         {
             _countryService = countryService;
-            _cancellationToken = new CancellationToken();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         // GET: api/Country
@@ -41,6 +44,7 @@ namespace WebApiPagingAngularClient.Controllers
             var country = await _countryService.GetByIdAsync(id, _cancellationToken);
             if (country == null)
             {
+                _cancellationTokenSource.Cancel();
                 return NotFound();
             }
 
@@ -53,37 +57,33 @@ namespace WebApiPagingAngularClient.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
 
             //Id is a required field to pass currently
             if (id != country.Id)
             {
-                return BadRequest();
+                _cancellationTokenSource.Cancel();
+                return NotFound();
             }
-
-            //db.Entry(country).State = EntityState.Modified;
-            //--> set with AutoChangeTracking
 
             try
             {
                 if (CountryExists(id))
                 {
                     await _countryService.UpdateAsync(country, _cancellationToken); 
-                    //db.SaveChangesAsync(); 
                     //--> UnitOfWork gets called on Update, Save called there
                 }
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!CountryExists(id))
-                {
-                    return NotFound();
-                }
-                throw;
+                if (CountryExists(id)) throw;
+                _cancellationTokenSource.Cancel();
+                return NotFound();
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok(country);
         }
 
         // POST: api/Country
@@ -92,12 +92,11 @@ namespace WebApiPagingAngularClient.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
 
-            //db.Countries.Add(country);
             await _countryService.AddAsync(country, _cancellationToken);
-            //await db.SaveChangesAsync();
             //--> UnitOfWork gets called on Update, Save called there
 
             return CreatedAtRoute("DefaultApi", new { id = country.Id }, country);
@@ -110,12 +109,11 @@ namespace WebApiPagingAngularClient.Controllers
             var country = await _countryService.GetByIdAsync(id, _cancellationToken);
             if (country == null)
             {
+                _cancellationTokenSource.Cancel();
                 return NotFound();
             }
 
             await _countryService.DeleteAsync(country, _cancellationToken);
-            //db.Countries.Remove(country);
-            //await db.SaveChangesAsync();
             //--> UnitOfWork gets called on Update, Save called there
 
             return Ok(country);
@@ -132,7 +130,7 @@ namespace WebApiPagingAngularClient.Controllers
 
         private bool CountryExists(int id)
         {
-            return _countryService.GetAll().Count(e => e.Id == id) > 0;
+            return _countryService.FindBy(e => e.Id == id).Any();
         }
     }
 }

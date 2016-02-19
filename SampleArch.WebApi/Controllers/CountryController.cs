@@ -62,15 +62,11 @@ namespace SampleArch.WebApi.Controllers
                 return BadRequest();
             }
 
-            //db.Entry(country).State = EntityState.Modified;
-            //--> set with AutoChangeTracking
-
             try
             {
                 if (CountryExists(id))
                 {
                     await _countryService.UpdateAsync(country, _cancellationToken); 
-                    //db.SaveChangesAsync(); 
                     //--> UnitOfWork gets called on Update, Save called there
                 }
             }
@@ -94,10 +90,8 @@ namespace SampleArch.WebApi.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            //db.Countries.Add(country);
+            
             country = await _countryService.AddAsync(country, _cancellationToken);
-            //await db.SaveChangesAsync();
             //--> UnitOfWork gets called on Update, Save called there
 
             return CreatedAtRoute("DefaultApi", new { id = country.Id }, country);
@@ -114,8 +108,6 @@ namespace SampleArch.WebApi.Controllers
             }
 
             country = await _countryService.DeleteAsync(country, _cancellationToken);
-            //db.Countries.Remove(country);
-            //await db.SaveChangesAsync();
             //--> UnitOfWork gets called on Update, Save called there
 
             return Ok(country);
@@ -132,7 +124,7 @@ namespace SampleArch.WebApi.Controllers
 
         private bool CountryExists(int id)
         {
-            return _countryService.GetAll().Count(e => e.Id == id) > 0;
+            return _countryService.FindBy(e => e.Id == id).Any();
         }
     }
 }
