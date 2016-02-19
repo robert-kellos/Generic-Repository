@@ -6,11 +6,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Web.Mvc;
+using FluentValidation.Attributes;
+using SampleArch.Logging;
 using SampleArch.Model;
 using SampleArch.Service;
+using SampleArch.Validation.Validators;
 
 namespace WebApiPagingAngularClient.Controllers
 {
+    [Validator(typeof(PersonValidator))]
     public class PersonController : ApiController
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -41,13 +46,11 @@ namespace WebApiPagingAngularClient.Controllers
         public async Task<IHttpActionResult> GetPerson(int id)
         {
             var person = await _personService.GetByIdAsync(id, _cancellationToken);
-            if (person == null)
-            {
-                _cancellationTokenSource.Cancel();
-                return NotFound();
-            }
+            
+            if (person != null) return Ok(person);
+            _cancellationTokenSource.Cancel();
 
-            return Ok(person);
+            return NotFound();
         }
 
         // PUT: api/Person/5
@@ -95,9 +98,21 @@ namespace WebApiPagingAngularClient.Controllers
                 _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
-            
-            person = await _personService.AddAsync(person, _cancellationToken);
-            //--> UnitOfWork gets called on Update, Save called there
+
+            var validatedResults = PersonValidator.Instance.Validate(person);
+            if (validatedResults.IsValid)
+            {
+                person = await _personService.AddAsync(person, _cancellationToken);
+                //--> UnitOfWork gets called on Update, Save called there
+            }
+            else
+            {
+                var errors = string.Join(", ", validatedResults.Errors);
+
+                Audit.Log.Debug(errors);
+
+                return Ok(errors);
+            }
 
             return CreatedAtRoute("DefaultApi", new { id = person.Id }, person);
         }

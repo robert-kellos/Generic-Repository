@@ -4,6 +4,7 @@ using System.Web.Optimization;
 using System.Web.Routing;
 using Autofac.Integration.Mvc;
 using Autofac;
+using FluentValidation.Mvc;
 using SampleArch.Logging;
 using SampleArch.Modules;
 
@@ -21,6 +22,7 @@ namespace SampleArch
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            FluentValidationModelValidatorProvider.Configure();
 
             //Autofac Configuration
             var builder = new Autofac.ContainerBuilder();

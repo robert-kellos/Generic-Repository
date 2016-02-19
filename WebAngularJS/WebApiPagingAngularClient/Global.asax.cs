@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using System.Web.Routing;
 using System.Web.Http;
 using System.Web.Optimization;
+using FluentValidation.Mvc;
 
 namespace WebApiPagingAngularClient
 {
@@ -16,6 +17,7 @@ namespace WebApiPagingAngularClient
             GlobalConfiguration.Configure(WebApiConfig.Register);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            FluentValidationModelValidatorProvider.Configure();
         }
     }
 }

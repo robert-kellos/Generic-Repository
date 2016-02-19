@@ -63,6 +63,14 @@
       <HintPath>..\..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="FluentValidation, Version=6.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\FluentValidation.6.1.0.0\lib\Net45\FluentValidation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FluentValidation.Mvc, Version=6.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\FluentValidation.MVC5.6.1.0.0\lib\Net45\FluentValidation.Mvc.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="InfraStructure, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Web.InfraStructure.1.0.0\lib\InfraStructure.dll</HintPath>
       <Private>True</Private>
@@ -1035,6 +1043,10 @@
     <Folder Include="App_Data\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SampleArch.FluentValidation\SampleArch.Validation.csproj">
+      <Project>{14800BE7-FD2C-4001-88BA-8C70479988BC}</Project>
+      <Name>SampleArch.Validation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SampleArch.Logging\SampleArch.Logging.csproj">
       <Project>{64e61db6-8cd3-4470-b116-92c7c9ff1cc3}</Project>
       <Name>SampleArch.Logging</Name>

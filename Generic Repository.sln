@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleArch", "SampleArch\SampleArch.csproj", "{1CAE3387-10C6-49F3-9FE5-65808CFE690C}"
 EndProject
@@ -37,6 +37,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backend", "Backend", "{9D06D989-ED02-429E-BA07-38010A6316CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleArch.Angular", "WebAngularJS\WebApiPagingAngularClient\SampleArch.Angular.csproj", "{12F96B20-8A24-4EE9-914A-8F91E410C7DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleArch.Validation", "SampleArch.FluentValidation\SampleArch.Validation.csproj", "{14800BE7-FD2C-4001-88BA-8C70479988BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -80,6 +82,10 @@ Global
 		{12F96B20-8A24-4EE9-914A-8F91E410C7DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12F96B20-8A24-4EE9-914A-8F91E410C7DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12F96B20-8A24-4EE9-914A-8F91E410C7DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14800BE7-FD2C-4001-88BA-8C70479988BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14800BE7-FD2C-4001-88BA-8C70479988BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14800BE7-FD2C-4001-88BA-8C70479988BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14800BE7-FD2C-4001-88BA-8C70479988BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,5 +98,6 @@ Global
 		{D0C4A3AE-33FD-44BD-9E82-6F37C5628ED0} = {9790C9C1-86CB-498E-B17B-A401C33D401E}
 		{0AC5E56D-225C-48AA-AF62-7C45FFA88635} = {1F703400-515A-4115-A987-AFE94EC4BA9E}
 		{12F96B20-8A24-4EE9-914A-8F91E410C7DC} = {1F703400-515A-4115-A987-AFE94EC4BA9E}
+		{14800BE7-FD2C-4001-88BA-8C70479988BC} = {9D06D989-ED02-429E-BA07-38010A6316CF}
 	EndGlobalSection
 EndGlobal

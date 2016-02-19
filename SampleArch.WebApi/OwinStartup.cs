@@ -2,6 +2,7 @@
 using System.Web.Http;
 using Autofac;
 using Autofac.Integration.SignalR;
+using FluentValidation.WebApi;
 using Microsoft.Owin;
 using Owin;
 
@@ -74,6 +75,8 @@ namespace SampleArch.WebApi
             app.UseAutofacMiddleware(container);
             app.UseAutofacWebApi(config);
             app.UseWebApi(config);
+            FluentValidationModelValidatorProvider.Configure(config);
+
             //app.MapSignalR();
         }
     }
