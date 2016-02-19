@@ -1,4 +1,5 @@
-﻿using System.Web.Mvc;
+﻿using System.Threading;
+using System.Web.Mvc;
 using SampleArch.Model;
 using SampleArch.Service;
 
@@ -6,12 +7,18 @@ namespace SampleArch.Controllers
 {
     public class CountryController : Controller
     {
+        private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationToken _cancellationToken;
+
         //initialize service object
         readonly ICountryService _countryService;
 
         public CountryController(ICountryService countryService)
         {
             _countryService = countryService;
+            
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         //
@@ -45,8 +52,13 @@ namespace SampleArch.Controllers
         {
 
             // TODO: Add insert logic here
-            if (!ModelState.IsValid) return View(country);
+            if (!ModelState.IsValid)
+            {
+                _cancellationTokenSource.Cancel();
+                return View(country);
+            }
             _countryService.Add(country);
+
             return RedirectToAction("Index");
         }
 
@@ -57,6 +69,7 @@ namespace SampleArch.Controllers
             var country = _countryService.GetById(id);
             if (country == null)
             {
+                _cancellationTokenSource.Cancel();
                 return HttpNotFound();
             }
             return View(country);
@@ -67,14 +80,14 @@ namespace SampleArch.Controllers
         [HttpPost]
         public ActionResult Edit(Country country)
         {
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _countryService.Update(country);
-                return RedirectToAction("Index");
+                _cancellationTokenSource.Cancel();
+                return View(country);
             }
-            return View(country);
+            _countryService.Update(country);
 
+            return RedirectToAction("Index");
         }
 
         //
@@ -84,6 +97,7 @@ namespace SampleArch.Controllers
             var country = _countryService.GetById(id);
             if (country == null)
             {
+                _cancellationTokenSource.Cancel();
                 return HttpNotFound();
             }
             return View(country);
@@ -97,6 +111,7 @@ namespace SampleArch.Controllers
         {
             var country = _countryService.GetById(id);
             _countryService.Delete(country);
+
             return RedirectToAction("Index");
         }
     }

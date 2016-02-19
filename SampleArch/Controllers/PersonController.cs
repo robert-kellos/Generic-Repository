@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Threading;
 using System.Web.Mvc;
 using SampleArch.Model;
 using SampleArch.Service;
@@ -7,12 +8,18 @@ namespace SampleArch.Controllers
 {
     public class PersonController : Controller
     {
+        private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationToken _cancellationToken;
+
         readonly IPersonService _personService;
         readonly ICountryService _countryService;
         public PersonController(IPersonService personService, ICountryService countryService)
         {
             _personService = personService;
             _countryService = countryService;
+            
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         // GET: /Person/
@@ -26,14 +33,15 @@ namespace SampleArch.Controllers
         {
             if (id == null)
             {
+                _cancellationTokenSource.Cancel();
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
+
             var person = _personService.GetById(id.Value);
-            if (person == null)
-            {
-                return HttpNotFound();
-            }
-            return View(person);
+            if (person != null) return View(person);
+            _cancellationTokenSource.Cancel();
+
+            return HttpNotFound();
         }
 
         // GET: /Person/Create
@@ -65,14 +73,17 @@ namespace SampleArch.Controllers
         {
             if (id == null)
             {
+                _cancellationTokenSource.Cancel();
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             var person = _personService.GetById(id.Value);
             if (person == null)
             {
+                _cancellationTokenSource.Cancel();
                 return HttpNotFound();
             }
             ViewBag.CountryId = new SelectList(_countryService.GetAll(), "Id", "Name", person.CountryId);
+
             return View(person);
         }
 
@@ -89,6 +100,7 @@ namespace SampleArch.Controllers
                 return RedirectToAction("Index");
             }
             ViewBag.CountryId = new SelectList(_countryService.GetAll(), "Id", "Name", person.CountryId);
+
             return View(person);
         }
 
@@ -97,14 +109,15 @@ namespace SampleArch.Controllers
         {
             if (id == null)
             {
+                _cancellationTokenSource.Cancel();
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
+
             var person = _personService.GetById(id.Value);
-            if (person == null)
-            {
-                return HttpNotFound();
-            }
-            return View(person);
+            if (person != null) return View(person);
+            _cancellationTokenSource.Cancel();
+
+            return HttpNotFound();
         }
 
         // POST: /Person/Delete/5
@@ -114,6 +127,7 @@ namespace SampleArch.Controllers
         {
             var person = _personService.GetById(id);
             _personService.Delete(person);
+
             return RedirectToAction("Index");
         }
     }

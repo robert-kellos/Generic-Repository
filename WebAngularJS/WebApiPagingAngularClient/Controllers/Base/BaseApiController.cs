@@ -14,13 +14,15 @@ namespace WebApiPagingAngularClient.Controllers.Base
 {
     public abstract class BaseApiController<TEntity> : ApiController, IEntityService<TEntity>, IEntity<long> where TEntity : BaseEntity
     {
-        //private readonly CancellationToken _cancellationToken;
+        protected CancellationTokenSource _cancellationTokenSource;
+
         protected IEntityService<TEntity> _service;
         
         public BaseApiController(IEntityService<TEntity> service)
         {
             _service = service;
-            //_cancellationToken = new CancellationToken();
+
+            _cancellationTokenSource = new CancellationTokenSource();
         }
         
         public long Id { get { return ((IEntity<long>)_service).Id; } set{ ((IEntity<long>)_service).Id = value; } }

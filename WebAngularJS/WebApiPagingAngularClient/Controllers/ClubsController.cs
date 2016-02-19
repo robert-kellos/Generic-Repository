@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Web.Http;
 using WebApiPagingAngularClient.Models;
 using WebApiPagingAngularClient.Utility;
@@ -9,7 +10,10 @@ namespace WebApiPagingAngularClient.Controllers
     [RoutePrefix("api/clubs")]
     public class ClubsController : ApiController
     {
-        private ClubRepository clubRepository;
+        private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationToken _cancellationToken;
+
+        private readonly ClubRepository _clubRepository;
 
         public ClubsController(): this(new ClubRepository())
         {
@@ -18,14 +22,17 @@ namespace WebApiPagingAngularClient.Controllers
 
         public ClubsController(ClubRepository repository)
         {
-            this.clubRepository = repository;
+            _clubRepository = repository;
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         // GET: api/Clubs
         [Route("")]
         public IHttpActionResult Get()
         {
-            var clubs = this.clubRepository.Clubs.ToList();
+            var clubs = _clubRepository.Clubs.ToList();
 
             return Ok(clubs);
         }
@@ -34,7 +41,7 @@ namespace WebApiPagingAngularClient.Controllers
         [Route("{id:int}")]
         public IHttpActionResult Get(int id)
         {
-            var club = this.clubRepository.Clubs.FirstOrDefault(c => c.Id == id);
+            var club = _clubRepository.Clubs.FirstOrDefault(c => c.Id == id);
 
             return Ok(club);
         }
@@ -43,7 +50,7 @@ namespace WebApiPagingAngularClient.Controllers
         [Route("{name:alpha}")]
         public IHttpActionResult Get(string name)
         {
-            var club = this.clubRepository.Clubs.FirstOrDefault(c => c.Name == name);
+            var club = _clubRepository.Clubs.FirstOrDefault(c => c.Name == name);
 
             return Ok(club);
         }
@@ -52,9 +59,9 @@ namespace WebApiPagingAngularClient.Controllers
         [Route("{pageSize:int}/{pageNumber:int}/{orderBy:alpha?}")]
         public IHttpActionResult Get(int pageSize, int pageNumber, string orderBy = "")
         {
-            var totalCount = this.clubRepository.Clubs.Count();
+            var totalCount = _clubRepository.Clubs.Count();
             var totalPages = Math.Ceiling((double)totalCount / pageSize);
-            var clubQuery = this.clubRepository.Clubs;
+            var clubQuery = _clubRepository.Clubs;
 
             if (QueryHelper.PropertyExists<Club>(orderBy))
             {
@@ -82,6 +89,7 @@ namespace WebApiPagingAngularClient.Controllers
         // POST: api/Clubs
         public void Post([FromBody]string value)
         {
+            _cancellationTokenSource.Cancel();
         }
 
         // PUT: api/Clubs/5

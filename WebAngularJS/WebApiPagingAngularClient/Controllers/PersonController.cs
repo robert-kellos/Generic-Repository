@@ -13,6 +13,7 @@ namespace WebApiPagingAngularClient.Controllers
 {
     public class PersonController : ApiController
     {
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly CancellationToken _cancellationToken;
 
         //initialize service object
@@ -23,7 +24,9 @@ namespace WebApiPagingAngularClient.Controllers
         public PersonController(IPersonService personService)
         {
             _personService = personService;
-            _cancellationToken = new CancellationToken();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         // GET: api/Person
@@ -40,6 +43,7 @@ namespace WebApiPagingAngularClient.Controllers
             var person = await _personService.GetByIdAsync(id, _cancellationToken);
             if (person == null)
             {
+                _cancellationTokenSource.Cancel();
                 return NotFound();
             }
 
@@ -52,37 +56,34 @@ namespace WebApiPagingAngularClient.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
 
             //Id is a required field to pass currently
             if (id != person.Id)
             {
-                return BadRequest();
+                _cancellationTokenSource.Cancel();
+                return NotFound();
             }
-
-            //db.Entry(Person).State = EntityState.Modified;
-            //--> set with AutoChangeTracking
 
             try
             {
                 if (PersonExists(id))
                 {
                    await _personService.UpdateAsync(person, _cancellationToken);
-                    //db.SaveChangesAsync(); 
                     //--> UnitOfWork gets called on Update, Save called there
                 }
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!PersonExists(id))
-                {
-                    return NotFound();
-                }
-                throw;
+                if (PersonExists(id)) throw;
+                _cancellationTokenSource.Cancel();
+
+                return NotFound();
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok(person);
         }
 
         // POST: api/Person
@@ -91,12 +92,11 @@ namespace WebApiPagingAngularClient.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
-
-            //db.Countries.Add(Person);
+            
             person = await _personService.AddAsync(person, _cancellationToken);
-            //await db.SaveChangesAsync();
             //--> UnitOfWork gets called on Update, Save called there
 
             return CreatedAtRoute("DefaultApi", new { id = person.Id }, person);
@@ -109,12 +109,11 @@ namespace WebApiPagingAngularClient.Controllers
             var person = await _personService.GetByIdAsync(id, _cancellationToken);
             if (person == null)
             {
+                _cancellationTokenSource.Cancel();
                 return NotFound();
             }
 
             person = await _personService.DeleteAsync(person, _cancellationToken);
-            //db.Countries.Remove(Person);
-            //await db.SaveChangesAsync();
             //--> UnitOfWork gets called on Update, Save called there
 
             return Ok(person);
@@ -131,7 +130,7 @@ namespace WebApiPagingAngularClient.Controllers
 
         private bool PersonExists(int id)
         {
-            return _personService.GetAll().Count(e => e.Id == id) > 0;
+            return _personService.FindBy(e => e.Id == id).AsParallel().Any();
         }
     }
 }

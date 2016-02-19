@@ -13,19 +13,20 @@ namespace SampleArch.Controllers
 {
     public class CountryApiController : ApiController
     {
-        //TODO: validate CancellationToken is efficiently implemented
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly CancellationToken _cancellationToken;
 
         //initialize service object
         private readonly ICountryService _countryService;
-
-
+        
         //DEFAULT cstr not required when using IoC, below auto-instantiated with AutoFac
 
         public CountryApiController(ICountryService countryService)
         {
             _countryService = countryService;
-            _cancellationToken = new CancellationToken();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         // GET: api/Country
@@ -39,13 +40,12 @@ namespace SampleArch.Controllers
         [ResponseType(typeof(Country))]
         public async Task<IHttpActionResult> GetCountry(int id)
         {
-            Country country = await _countryService.GetByIdAsync(id, _cancellationToken);
-            if (country == null)
-            {
-                return NotFound();
-            }
+            var country = await _countryService.GetByIdAsync(id, _cancellationToken);
 
-            return Ok(country);
+            if (country != null) return Ok(country);
+            _cancellationTokenSource.Cancel();
+
+            return NotFound();
         }
 
         // PUT: api/Country/5
@@ -54,16 +54,17 @@ namespace SampleArch.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
 
             //Id is a required field to pass currently
             if (id != country.Id)
             {
-                return BadRequest();
+                _cancellationTokenSource.Cancel();
+                return NotFound();
             }
-            //--> set with AutoChangeTracking
-
+            
             try
             {
                 if (CountryExists(id))
@@ -74,17 +75,13 @@ namespace SampleArch.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!CountryExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                if (CountryExists(id)) throw;
+                _cancellationTokenSource.Cancel();
+
+                return NotFound();
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok(country);
         }
 
         // POST: api/Country
@@ -93,6 +90,7 @@ namespace SampleArch.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
             
@@ -106,9 +104,10 @@ namespace SampleArch.Controllers
         [ResponseType(typeof(Country))]
         public async Task<IHttpActionResult> DeleteCountry(int id)
         {
-            Country country = await _countryService.GetByIdAsync(id, _cancellationToken).ConfigureAwait(true);
+            var country = await _countryService.GetByIdAsync(id, _cancellationToken);
             if (country == null)
             {
+                _cancellationTokenSource.Cancel();
                 return NotFound();
             }
 
@@ -129,7 +128,7 @@ namespace SampleArch.Controllers
 
         private bool CountryExists(int id)
         {
-            return _countryService.GetAll().Count(e => e.Id == id) > 0;
+            return _countryService.FindBy(e => e.Id == id).Any();
         }
     }
 }

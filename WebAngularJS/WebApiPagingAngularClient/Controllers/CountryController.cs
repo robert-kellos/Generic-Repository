@@ -13,12 +13,11 @@ namespace WebApiPagingAngularClient.Controllers
 {
     public class CountryController : ApiController
     {
-        private readonly CancellationToken _cancellationToken;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationToken _cancellationToken;
 
         //initialize service object
         private readonly ICountryService _countryService;
-
 
         //DEFAULT cstr not required when using IoC, below auto-instantiated with AutoFac
 
@@ -42,13 +41,11 @@ namespace WebApiPagingAngularClient.Controllers
         public async Task<IHttpActionResult> GetCountry(int id)
         {
             var country = await _countryService.GetByIdAsync(id, _cancellationToken);
-            if (country == null)
-            {
-                _cancellationTokenSource.Cancel();
-                return NotFound();
-            }
 
-            return Ok(country);
+            if (country != null) return Ok(country);
+            _cancellationTokenSource.Cancel();
+
+            return NotFound();
         }
 
         // PUT: api/Country/5
@@ -130,7 +127,7 @@ namespace WebApiPagingAngularClient.Controllers
 
         private bool CountryExists(int id)
         {
-            return _countryService.FindBy(e => e.Id == id).Any();
+            return _countryService.FindBy(e => e.Id == id).AsParallel().Any();
         }
     }
 }

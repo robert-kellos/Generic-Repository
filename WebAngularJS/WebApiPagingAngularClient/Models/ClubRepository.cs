@@ -30,7 +30,7 @@ namespace WebApiPagingAngularClient.Models
 
         public IQueryable<Club> Clubs 
         {
-            get { return this.clubs.AsQueryable(); } 
+            get { return clubs.AsQueryable(); } 
         }
     }
 }

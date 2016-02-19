@@ -13,6 +13,7 @@ namespace SampleArch.WebApi.Controllers
 {
     public class CountryController : ApiController
     {
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly CancellationToken _cancellationToken;
 
         //initialize service object
@@ -24,7 +25,9 @@ namespace SampleArch.WebApi.Controllers
         public CountryController(ICountryService countryService)
         {
             _countryService = countryService;
-            _cancellationToken = new CancellationToken();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         // GET: api/Country
@@ -39,12 +42,11 @@ namespace SampleArch.WebApi.Controllers
         public async Task<IHttpActionResult> GetCountry(int id)
         {
             var country = await _countryService.GetByIdAsync(id, _cancellationToken);
-            if (country == null)
-            {
-                return NotFound();
-            }
 
-            return Ok(country);
+            if (country != null) return Ok(country);
+            _cancellationTokenSource.Cancel();
+
+            return NotFound();
         }
 
         // PUT: api/Country/5
@@ -53,13 +55,15 @@ namespace SampleArch.WebApi.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
 
             //Id is a required field to pass currently
             if (id != country.Id)
             {
-                return BadRequest();
+                _cancellationTokenSource.Cancel();
+                return NotFound();
             }
 
             try
@@ -72,14 +76,13 @@ namespace SampleArch.WebApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!CountryExists(id))
-                {
-                    return NotFound();
-                }
-                throw;
+                if (CountryExists(id)) throw;
+                _cancellationTokenSource.Cancel();
+
+                return NotFound();
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok(country);
         }
 
         // POST: api/Country
@@ -88,6 +91,7 @@ namespace SampleArch.WebApi.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _cancellationTokenSource.Cancel();
                 return BadRequest(ModelState);
             }
             
@@ -104,6 +108,7 @@ namespace SampleArch.WebApi.Controllers
             var country = await _countryService.GetByIdAsync(id, _cancellationToken).ConfigureAwait(true); ;
             if (country == null)
             {
+                _cancellationTokenSource.Cancel();
                 return NotFound();
             }
 
@@ -124,7 +129,7 @@ namespace SampleArch.WebApi.Controllers
 
         private bool CountryExists(int id)
         {
-            return _countryService.FindBy(e => e.Id == id).Any();
+            return _countryService.FindBy(e => e.Id == id).AsParallel().Any();
         }
     }
 }

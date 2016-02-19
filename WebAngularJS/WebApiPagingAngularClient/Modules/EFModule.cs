@@ -7,7 +7,7 @@ using WebApiPagingAngularClient.Controllers.Base;
 namespace WebApiPagingAngularClient.Modules
 {
     
-    public class EfModule : Autofac.Module
+    public class EfModule : Module
     {
         protected override void Load(ContainerBuilder builder)
         {

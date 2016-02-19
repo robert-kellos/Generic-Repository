@@ -588,7 +588,6 @@ namespace SampleArch.Repository.Common
 
                 //_currentDbContext.Entry(entity).State = EntityState.Modified;
                 Attach(entity, EntityState.Modified);
-                //await _currentDbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
 
             }, cancellationToken).ConfigureAwait(true);
         }
@@ -1087,11 +1086,6 @@ namespace SampleArch.Repository.Common
 
             try
             {
-                //old - doesn't account for loaded entity in set
-                //var dbset = _currentDbContext.Set<TEntity>();
-                //dbset.Attach(entity);((IEntity<long>)_service)
-                
-                //
                 var local = _currentDbContext.Set<TEntity>()
                          .Local
                          .AsParallel()
